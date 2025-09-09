@@ -17,6 +17,9 @@ colors = {
 credit_text = "Designed and Developed by: Noah Huskey\n \nMade in Pygame\n \nSoundtrack created in Udio"
 
 
+howtoplay_text = "Coming soon!"
+
+
 def set_display(info):
 	global WIDTH, HEIGHT
 	WIDTH, HEIGHT = info.current_w, info.current_h

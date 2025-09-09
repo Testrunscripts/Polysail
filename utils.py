@@ -10,7 +10,7 @@ def bounce_back(entity, obstacle):
 	if entity.stopped:
 		return
 
-	# Push out so no phasing
+	#Push out so no phasing
 	dx = entity.x - obstacle.x
 	dy = entity.y - obstacle.y
 	dist = math.hypot(dx, dy)
@@ -18,14 +18,9 @@ def bounce_back(entity, obstacle):
 		return
 	nx, ny = dx / dist, dy / dist
 	overlap = (obstacle.size + entity.size) - dist
-	if overlap > 0:
-		#entity.x += nx * overlap
-		#entity.y += ny * overlap
-		pass
 
-	# Old-school "flip and stop"
+	#Flip and stop
 	entity.orientation = (entity.orientation + 180) % 360
-	#entity.speed *= 0.2
 	
 	
 def display_info(screen, boat):
@@ -59,9 +54,9 @@ def draw_wind_rose(surface, center, size, direction_angle, speed, font_small, fo
 	directions = ["N", "E", "S", "W"]
 	angle_offset = math.pi / 2
 
-	# Draw cardinal lines + labels
+	#Draw cardinal lines and labels
 	for i, direction in enumerate(directions):
-		angle = i * (math.pi / 2) - math.pi / 2  # N=0°
+		angle = i * (math.pi / 2) - math.pi / 2  #N = 0°
 		dx = int(math.cos(angle) * size)
 		dy = int(math.sin(angle) * size)
 		end_pos = (center[0] + dx, center[1] + dy)
@@ -71,15 +66,15 @@ def draw_wind_rose(surface, center, size, direction_angle, speed, font_small, fo
 		label_rect = label.get_rect(center=(center[0] + dx * 1.2, center[1] + dy * 1.2))
 		surface.blit(label, label_rect)
 
-	# Draw speed beside rose
+	#Draw speed beside rose
 	speed_text = font_large.render(str(round(speed * 1.5)), True, sett.colors["WHITE"])
 	speed_rect = speed_text.get_rect(center=(center[0] + size * 3, center[1]))
 	surface.blit(speed_text, speed_rect)
 
-	# Center marker
+	#Center marker
 	pygame.draw.circle(surface, sett.colors["RED"], center, 5)
 
-	# Draw wind arrow
+	#Draw wind arrow
 	angle_radians = math.radians(direction_angle) - math.pi / 2
 	arrow_length = size * 1.5
 	arrow_dx = int(math.cos(angle_radians) * arrow_length)
@@ -88,7 +83,7 @@ def draw_wind_rose(surface, center, size, direction_angle, speed, font_small, fo
 
 	pygame.draw.line(surface, sett.colors["RED"], center, arrow_tip, 3)
 
-	# Arrowhead
+	#Arrowhead
 	head_size = 10
 	for offset in (math.pi / 6, -math.pi / 6):
 		hx = int(math.cos(angle_radians + offset) * head_size)
@@ -106,7 +101,7 @@ def get_stop_btns():
 	
 	
 def load_game():
-	with open("save_file.pkl", "rb") as f:
+	with open("save_main.pkl", "rb") as f:
 		state = pickle.load(f)
 		return state
 	

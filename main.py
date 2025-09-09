@@ -5,14 +5,11 @@ import random
 import settings as sett
 
 from objects import Boat, Cloud, Island, Rock, Wind
-from utils import Button, bounce_back, display_info, draw_wind_rose, get_stop_btns, render_multiline, save_game
+from utils import Button, bounce_back, display_info, draw_wind_rose, get_stop_btns, load_game, render_multiline, save_game
 
 
 pygame.init()
 pygame.mixer.init()
-
-
-#WORLD_SIZE = 50000
 
 
 class DevTools:
@@ -32,18 +29,20 @@ class Game:
 		self.buttons = []
 		self.clock = pygame.time.Clock()
 		self.game_running = False
+		self.load_data = False
 		self.running = True
 		self.screen = pygame.display.set_mode((sett.WIDTH, sett.HEIGHT))
 
-		# cache fonts
+		#Cache fonts
 		self.font_small = pygame.font.Font(None, int(sett.HEIGHT * 0.02))
 		self.font_large = pygame.font.Font(None, int(sett.HEIGHT * 0.1))
 		self.font_debug = pygame.font.Font(None, 25)
 
-		# state setup
+		#State setup
 		self.state_dict = {
 			"CREDITS" : self.credits,
 			"EXIT" : self.exit_game,
+			"HOWTOPLAY" : self.how_to_play,
 			"MAIN_MENU" : self.main_menu,
 			"NEW_GAME" : self.new_game,
 		}
@@ -64,19 +63,28 @@ class Game:
 		self.mouse_held = False
 		self.mouse_pos = None
 
-		# control rects (reused)
+		#Control rects
 		control_height = int(sett.HEIGHT * 0.15)
 		self.sail_rect = pygame.Rect(0.05 * sett.WIDTH, sett.HEIGHT - control_height, 0.25 * sett.WIDTH, control_height)
 		self.rudder_rect = pygame.Rect(0.35 * sett.WIDTH, sett.HEIGHT - control_height, 0.25 * sett.WIDTH, control_height)
 		self.reef_rect = pygame.Rect(0.65 * sett.WIDTH, sett.HEIGHT - control_height, 0.25 * sett.WIDTH, control_height)
+		
+		self.boat = None
+		self.wind = None
+		
+		self.islands = []
+		self.rocks = []
 
 	def exit_game(self):
-		if self.game_running:
+		if self.state == "EXIT":
+			self.running = False
+			pygame.quit()
+		elif self.state != "MAIN_MENU":
 			self.game_running = False
 			self.state = "MAIN_MENU"
 		else:
-			self.running = False
-			pygame.quit()
+			self.game_running = False
+			self.state = "EXIT"
 
 	def handle_button_click(self, pos):
 		for button in self.buttons:
@@ -86,13 +94,24 @@ class Game:
 				elif button.text == "New Game":
 					self.state = "NEW_GAME"
 					self.game_running = False
+				elif button.text == "Load Game":
+					self.load_data = True
+					self.state = "NEW_GAME"
+					self.game_running = False
+				elif button.text == "How to Play":
+					if self.state == "HOWTOPLAY":
+						self.state = "MAIN_MENU"
+					else:
+						self.game_running = False
+						self.state = "HOWTOPLAY"
 				elif button.text == "Credits":
 					if self.state == "CREDITS":
 						self.state = "MAIN_MENU"
 					else:
+						self.game_running = False
 						self.state = "CREDITS"
 				elif button.text == "Exit":
-					self.state = "EXIT"
+					self.exit_game()
 
 	def handle_events(self, boat=None, stop_buttons=None):
 		for event in pygame.event.get():
@@ -102,25 +121,22 @@ class Game:
 				self.mouse_held = True
 				self.mouse_pos = event.pos
 
-				# Handle docked buttons first
+				#Handle docked buttons first
 				if boat and boat.stopped and stop_buttons:
 					for btn in stop_buttons:
 						if btn.rect.collidepoint(event.pos):
 							if btn.text == "Set Sail":
 								boat.release()
 							elif btn.text == "Save":
-								boat = self.boat
-								boat.surface = None
-								for island in self.islands:
-									island.surface = None
+								#self.boat.surface = None
 								for rock in self.rocks:
 									rock.surface = None
 								save_game(boat = boat, islands = self.islands, rocks = self.rocks, wind = self.wind)
 							elif btn.text == "Exit":
 								self.exit_game()
-							return  # stop further processing this click
+							return  #Stop further processing this click
 
-				# Normal button click handling
+				#Normal button click handling
 				self.handle_button_click(event.pos)
 
 			elif event.type == pygame.MOUSEBUTTONUP:
@@ -131,7 +147,7 @@ class Game:
 				pygame.mixer.music.load(self.playlist[self.current_track])
 				pygame.mixer.music.play()
 
-		# Held adjustments for normal controls
+		#Held adjustments for normal controls
 		if self.state == "NEW_GAME" and boat and getattr(self, "mouse_held", False) and not boat.stopped:
 			if self.sail_rect.collidepoint(self.mouse_pos):
 				boat.adjust_sail(0.5 if self.mouse_pos[0] < self.sail_rect.centerx else -0.5)
@@ -153,14 +169,26 @@ class Game:
 		for button in self.buttons:
 			button.draw(self.screen)
 		pygame.display.flip()
+		
+	def how_to_play(self):
+		if not self.buttons:
+			scale_width = sett.WIDTH // 10
+			scale_height = sett.HEIGHT // 20
+			self.buttons = [Button("Main Menu", (sett.WIDTH // 2 - scale_width, int(sett.HEIGHT // 1.2)),
+				scale_width * 2, scale_height // 2, sett.HEIGHT)]
+
+		self.screen.fill(sett.colors["LIGHT BLUE"])
+		render_multiline(self.screen, sett.howtoplay_text, self.font_small, sett.colors["WHITE"])
+		self.handle_events()
+		for button in self.buttons:
+			button.draw(self.screen)
+		pygame.display.flip()
 
 	def main_menu(self):
 		sett.WORLD_WIDTH, sett.WORLD_HEIGHT = sett.WIDTH, sett.HEIGHT
-		#boat = Boat(x = sett.WIDTH // 2, y = sett.HEIGHT // 2)
 		wind = Wind()
 		clouds = []
 		self.game_running = True
-		#cam_x, cam_y = sett.WORLD_WIDTH // 2, sett.WORLD_HEIGHT // 2
 		cam_x, cam_y = 0, 0
 		for _ in range(25):
 			cloud = Cloud()
@@ -177,7 +205,6 @@ class Game:
 		while self.game_running:
 			current_time = pygame.time.get_ticks()
 			self.screen.fill(sett.colors["LIGHT BLUE"])
-			self.handle_events()
 			text_surface = self.font_large.render("POLYSAIL", True, sett.colors["WHITE"])
 			self.screen.blit(text_surface, (sett.WIDTH // 2 - text_surface.get_width() // 2, sett.HEIGHT // 10))
 			wind.update_wind(current_time)
@@ -186,42 +213,14 @@ class Game:
 				cloud.draw(self.screen, cam_x, cam_y)
 			for button in self.buttons:
 				button.draw(self.screen)
+			self.handle_events()
 			pygame.display.flip()
 
 	def new_game(self):
 		self.game_running = True
+		
+		clouds, stop_buttons = self.setup()
 		dev = DevTools(self.clock)
-		
-		sett.WORLD_WIDTH, sett.WORLD_HEIGHT = 25000, 25000
-		self.boat = Boat(x = sett.WIDTH // 2, y = sett.HEIGHT // 2)
-		self.wind = Wind()
-		
-		stop_buttons = None
-		
-		clouds = []
-		self.islands = []
-		# Spawn one guaranteed island right under the boat
-		boat_x, boat_y = sett.WIDTH // 2, sett.HEIGHT // 2
-		starting_island = Island(x=boat_x, y=boat_y + 210, size=200)  # 400px down, size 800
-		self.islands.append(starting_island)
-		self.rocks = []
-		min_distance = 200
-		for _ in range(150):
-			clouds.append(Cloud())
-		for _ in range(50):
-			x, y = random.uniform(-sett.WORLD_WIDTH, sett.WORLD_WIDTH), random.uniform(-sett.WORLD_HEIGHT, sett.WORLD_HEIGHT)
-			# reject if too close to boat
-			while ((x - sett.WIDTH // 2) ** 2 + (y - sett.HEIGHT // 2) ** 2) < min_distance ** 2:
-				x, y = random.uniform(-sett.WORLD_WIDTH, sett.WORLD_WIDTH), random.uniform(-sett.WORLD_HEIGHT, sett.WORLD_HEIGHT)
-			self.islands.append(Island(x=x, y=y))
-				#islands.append(Island())
-		for _ in range(250):
-			x, y = random.uniform(-sett.WORLD_WIDTH, sett.WORLD_WIDTH), random.uniform(-sett.WORLD_HEIGHT, sett.WORLD_HEIGHT)
-			# reject if too close to boat
-			while ((x - sett.WIDTH // 2) ** 2 + (y - sett.HEIGHT // 2) ** 2) < min_distance ** 2:
-				x, y = random.uniform(-sett.WORLD_WIDTH, sett.WORLD_WIDTH), random.uniform(-sett.WORLD_HEIGHT, sett.WORLD_HEIGHT)
-			self.rocks.append(Rock(x=x, y=y))
-				#rocks.append(Rock())
 		
 		while self.game_running:
 			current_time = pygame.time.get_ticks()
@@ -247,9 +246,9 @@ class Game:
 						if island.check_docking(self.boat):
 							self.boat.stop_at_obstacle(island)
 							stop_buttons = get_stop_btns()
-					elif (self.boat.x - island.x) ** 2 + (self.boat.y - island.y) ** 2 <= island.size ** 2:
-						# inside the island, but too fast to dock
-						bounce_back(self.boat, island)
+						elif (self.boat.x - island.x) ** 2 + (self.boat.y - island.y) ** 2 <= island.size ** 2:
+						#Inside the island, but too fast to dock
+							bounce_back(self.boat, island)
 			
 			self.wind.update_wind(current_time)
 			
@@ -272,6 +271,13 @@ class Game:
 			if self.boat.stopped:
 				for btn in stop_buttons:
 					btn.draw(self.screen)
+				if self.boat.island:
+					island_name_surface = self.font_large.render(self.boat.island.name.capitalize(), True, sett.colors["WHITE"])
+					#Choose a y-position above the first stop button
+					first_button = stop_buttons[0]
+					name_x = sett.WIDTH // 2 - island_name_surface.get_width() // 2
+					name_y = first_button.rect.top - int(sett.HEIGHT * 0.1)
+					self.screen.blit(island_name_surface, (name_x, name_y))
 			self.handle_events(self.boat, stop_buttons = stop_buttons if stop_buttons else None)
 			
 			pygame.draw.rect(self.screen, sett.colors["RED"], self.sail_rect)
@@ -286,6 +292,46 @@ class Game:
 	def run(self):
 		while self.running:
 			self.state_dict[self.state]()
+			
+	def setup(self):
+		sett.WORLD_WIDTH, sett.WORLD_HEIGHT = 25000, 25000
+		clouds = []
+		stop_buttons = None
+		for _ in range(150):
+			clouds.append(Cloud())
+		if self.load_data:
+			self.load_data = False
+			try:
+				state = load_game()
+				self.boat = state["boat"]
+				self.islands = state["islands"]
+				self.rocks = state["rocks"]
+				self.wind = state["wind"]
+				return clouds, get_stop_btns()
+			except Exception as e:
+				self.game_running = False
+				self.state = "MAIN_MENU"
+				return clouds, stop_buttons
+		self.boat = Boat(x = sett.WIDTH // 2, y = sett.HEIGHT // 2)
+		self.wind = Wind()
+		boat_x, boat_y = sett.WIDTH // 2, sett.HEIGHT // 2
+		starting_island = Island(x=boat_x, y=boat_y + 210, size=200)
+		self.islands.append(starting_island)
+		self.rocks = []
+		min_distance = 200
+		for _ in range(50):
+			x, y = random.uniform(-sett.WORLD_WIDTH, sett.WORLD_WIDTH), random.uniform(-sett.WORLD_HEIGHT, sett.WORLD_HEIGHT)
+			#Reject if too close to boat
+			while ((x - sett.WIDTH // 2) ** 2 + (y - sett.HEIGHT // 2) ** 2) < min_distance ** 2:
+				x, y = random.uniform(-sett.WORLD_WIDTH, sett.WORLD_WIDTH), random.uniform(-sett.WORLD_HEIGHT, sett.WORLD_HEIGHT)
+			self.islands.append(Island(x=x, y=y))
+		for _ in range(250):
+			x, y = random.uniform(-sett.WORLD_WIDTH, sett.WORLD_WIDTH), random.uniform(-sett.WORLD_HEIGHT, sett.WORLD_HEIGHT)
+			#Reject if too close to boat
+			while ((x - sett.WIDTH // 2) ** 2 + (y - sett.HEIGHT // 2) ** 2) < min_distance ** 2:
+				x, y = random.uniform(-sett.WORLD_WIDTH, sett.WORLD_WIDTH), random.uniform(-sett.WORLD_HEIGHT, sett.WORLD_HEIGHT)
+			self.rocks.append(Rock(x=x, y=y))
+		return clouds, stop_buttons
 			
 			
 if __name__ == "__main__":
