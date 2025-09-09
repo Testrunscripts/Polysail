@@ -1,8 +1,6 @@
 # PolySail
 A touch-control sailing game made in pygame. Sail around a vast sea, docking at uncharted islands and avoiding rocks. Trim the sails, man the helm, keep your eyes on the wind and watch your speed to stay safe while sailing. Or just watch the clouds roll lazily by and enjoy the relaxing music.
 
-## Screenshots
-
 ![Polysail main menu](Assets/Screenshots/polysail_menu.jpg)
 
 ## Features
