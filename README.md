@@ -3,7 +3,7 @@ A touch-control sailing game made in pygame. Sail around a vast sea, docking at 
 
 ## Screenshots
 
-![Polysail main menu](Assets/Screenshots/polysail_menu.png)
+![Polysail main menu](Assets/Screenshots/polysail_menu.jpg)
 
 ## Features
 - Semi-realistic sailing mechanics
@@ -29,4 +29,4 @@ A touch-control sailing game made in pygame. Sail around a vast sea, docking at 
 - Copy repository
 - Run main.py
 
-![Polysail sailing by an island](Assets/Screenshots/polysail_sailing_past_island.png)
+![Polysail sailing by an island](Assets/Screenshots/polysail_sailing_past_island.jpg)
