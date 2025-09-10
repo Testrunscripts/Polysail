@@ -10,14 +10,16 @@ A touch-control sailing game made in pygame. Sail around a vast sea, docking at 
 - Wind physics
 - Rocks to watch out for
 - Aesthetically-pleasing clouds
+- Seagulls
 - Beautiful soundtrack
 - Save/Load game
 
 ## Controls
-- Hold the left side of the sail pad to extend the sails.
-- Hold either side of the rudder pad to control the rudder.
-- Hold the left side of the reef pad to unreef the sails, hold the right side to reef them again.
+- Hold the left (or press Q) or right side (or press E) of the sail pad to trim the sails.
+- Hold either side of the rudder pad to control the rudder (A and D).
+- Hold the left side of the reef pad (or press W) to unreef the sails, hold the right side (or press S) to reef them again.
 - Dock at an island to bring up the menu.
+- Seagulls can give away island and rock locations.
 
 ## Requirements
 - Python 3
