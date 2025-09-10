@@ -17,7 +17,7 @@ colors = {
 credit_text = "Designed and Developed by: Noah Huskey\n \nMade in Pygame\n \nSoundtrack created in Udio"
 
 
-howtoplay_text = "Coming soon!"
+howtoplay_text = """- Hold the left side of the sail pad to extend the sails\n\n - Hold either side of the rudder pad to control the rudder\n\n- Hold the left side of the reef pad to unreef the sails,\nhold the right side to reef them again\n\n- Dock at an island to bring up the menu"""
 
 
 def set_display(info):

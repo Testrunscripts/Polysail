@@ -210,10 +210,12 @@ class Island(StationaryObject):
 		self.color = sett.colors["GREEN"]
 		self.name = name or random.choice(Syllables) + random.choice(Syllables)
 		self.size = size or random.randint(200, 600)
+		
+		self.island_name_surface = None
 
 	def check_docking(self, boat):
 		dist_sq = (boat.x - self.x) ** 2 + (boat.y - self.y) ** 2
-		return dist_sq <= self.size ** 2 and boat.speed < 2
+		return dist_sq <= self.size ** 2 and boat.speed < 2 and not boat.island
 		
 	def draw(self, screen, cam_x, cam_y):
 		offset_x = self.x - cam_x
@@ -241,6 +243,69 @@ class Rock(StationaryObject):
 		if (offset_x + self.size < 0 or offset_x - self.size > sett.WIDTH or offset_y + self.size < 0 or offset_y - self.size > sett.HEIGHT):
 			return  #Off-screen
 		pygame.draw.circle(screen, self.color, (int(self.x - cam_x), int(self.y - cam_y)), self.size)
+		
+		
+class Seagull(MovingObject):
+	def __init__(self, home_x, home_y, max_radius=500):
+		self.speed = random.uniform(1.5, 3.0)
+		self.flap_phase = random.uniform(0, 2 * math.pi)
+		self.interval = random.randint(1500, 2500)
+		self.last_change = 0
+		self.n = 0
+		self.orientation = random.randint(0, 360)
+		self.size = 20
+		self.surface = None
+
+		# anchor point island/rock
+		self.home_x, self.home_y = home_x, home_y
+		self.max_radius = max_radius
+
+		#Start near home
+		self.x = home_x + random.randint(-max_radius//2, max_radius//2)
+		self.y = home_y + random.randint(-max_radius//2, max_radius//2)
+		
+	def draw(self, screen, cam_x, cam_y):
+		offset_x = self.x - cam_x
+		offset_y = self.y - cam_y
+		if (offset_x + self.size >= -sett.WIDTH * 2 and offset_x <= sett.WIDTH * 3) and (offset_y + self.size >= -sett.HEIGHT * 2 and offset_y <= sett.HEIGHT * 3):
+			self.draw_surface()
+			screen.blit(self.surface, (int(offset_x - self.size), int(offset_y - self.size)))
+		
+	def draw_self(self):
+		flap_angle = 15 * math.sin(self.flap_phase)
+		left_x = self.size - self.size * math.cos(math.radians(30 + flap_angle))
+		left_y = self.size - self.size * math.sin(math.radians(30 + flap_angle))
+		pygame.draw.line(self.surface, sett.colors["WHITE"], (self.size, self.size), (left_x, left_y), 2)
+		right_x = self.size + self.size * math.cos(math.radians(30 + flap_angle))
+		right_y = self.size - self.size * math.sin(math.radians(30 + flap_angle))
+		pygame.draw.line(self.surface, sett.colors["WHITE"], (self.size, self.size), (right_x, right_y), 2)
+		
+	def draw_surface(self):
+		if not self.surface:
+			self.get_surface()
+		self.surface.fill((0, 0, 0, 0))
+		self.draw_self()
+		
+	def move(self, time):
+		self.flap_phase += self.speed * 0.05
+		self.flap_phase %= 2 * math.pi
+		if self.n >= 1:
+			self.n = 0
+			super().move()
+
+			#Check distance from home
+			dx = self.x - self.home_x
+			dy = self.y - self.home_y
+			dist_sq = dx*dx + dy*dy
+
+			if dist_sq > self.max_radius**2:
+				#Force orientation back toward home
+				self.orientation = math.degrees(math.atan2(-dy, -dx))
+			elif time - self.last_change > self.interval:
+				self.last_change = time
+				self.orientation = random.randint(0, 360)
+		else:
+			self.n += 1
 		
 		
 class Wake:

@@ -4,7 +4,7 @@ import random
 
 import settings as sett
 
-from objects import Boat, Cloud, Island, Rock, Wind
+from objects import Boat, Cloud, Island, Rock, Seagull, Wind
 from utils import Button, bounce_back, display_info, draw_wind_rose, get_stop_btns, load_game, render_multiline, save_game
 
 
@@ -219,7 +219,7 @@ class Game:
 	def new_game(self):
 		self.game_running = True
 		
-		clouds, stop_buttons = self.setup()
+		clouds, seagulls, stop_buttons = self.setup()
 		dev = DevTools(self.clock)
 		
 		while self.game_running:
@@ -230,6 +230,12 @@ class Game:
 			cam_x, cam_y = self.boat.x - sett.WIDTH // 2, self.boat.y - sett.HEIGHT // 2
 			for cloud in clouds:
 				cloud.apply_wind(self.wind)
+			for seagull in seagulls:
+				offset_x = seagull.x - cam_x
+				offset_y = seagull.y - cam_y
+				dist_sq = offset_x**2 + offset_y**2
+				if dist_sq <= 4000**2:
+					seagull.move(dt)
 			if not self.boat.stopped:
 				for rock in self.rocks:
 					offset_x = rock.x - cam_x
@@ -245,6 +251,7 @@ class Game:
 					if not (offset_x + island.size < 0 or offset_x - island.size > sett.WIDTH or offset_y + island.size < 0 or offset_y - island.size > sett.HEIGHT):
 						if island.check_docking(self.boat):
 							self.boat.stop_at_obstacle(island)
+							self.boat.island.island_name_surface = self.font_large.render(self.boat.island.name.capitalize(), True, sett.colors["WHITE"], sett.colors["BLUE"])
 							stop_buttons = get_stop_btns()
 						elif (self.boat.x - island.x) ** 2 + (self.boat.y - island.y) ** 2 <= island.size ** 2:
 						#Inside the island, but too fast to dock
@@ -263,6 +270,11 @@ class Game:
 				if not (offset_x + rock.size < 0 or offset_x - rock.size > sett.WIDTH or offset_y + rock.size < 0 or offset_y - rock.size > sett.HEIGHT):
 					rock.draw(self.screen, cam_x, cam_y)
 			self.boat.draw(self.screen, cam_x, cam_y)
+			for seagull in seagulls:
+				offset_x = seagull.x - cam_x
+				offset_y = seagull.y - cam_y
+				if not (offset_x + seagull.size < 0 or offset_x - seagull.size > sett.WIDTH or offset_y + seagull.size < 0 or offset_y - seagull.size > sett.HEIGHT):
+					seagull.draw(self.screen, cam_x, cam_y)
 			for cloud in clouds:
 				offset_x = cloud.x - cam_x
 				offset_y = cloud.y - cam_y
@@ -271,13 +283,12 @@ class Game:
 			if self.boat.stopped:
 				for btn in stop_buttons:
 					btn.draw(self.screen)
-				if self.boat.island:
-					island_name_surface = self.font_large.render(self.boat.island.name.capitalize(), True, sett.colors["WHITE"])
-					#Choose a y-position above the first stop button
+				if self.boat.island and hasattr(self.boat.island, "island_name_surface"):
 					first_button = stop_buttons[0]
-					name_x = sett.WIDTH // 2 - island_name_surface.get_width() // 2
-					name_y = first_button.rect.top - int(sett.HEIGHT * 0.1)
-					self.screen.blit(island_name_surface, (name_x, name_y))
+					name_x = sett.WIDTH // 2 - self.boat.island.island_name_surface.get_width() // 2
+					name_y = first_button.rect.top - int(sett.HEIGHT * 0.5)
+					self.screen.blit(self.boat.island.island_name_surface, (name_x, name_y))
+		
 			self.handle_events(self.boat, stop_buttons = stop_buttons if stop_buttons else None)
 			
 			pygame.draw.rect(self.screen, sett.colors["RED"], self.sail_rect)
@@ -294,10 +305,11 @@ class Game:
 			self.state_dict[self.state]()
 			
 	def setup(self):
-		sett.WORLD_WIDTH, sett.WORLD_HEIGHT = 25000, 25000
+		sett.WORLD_WIDTH, sett.WORLD_HEIGHT = 10000, 10000
 		clouds = []
+		seagulls = []
 		stop_buttons = None
-		for _ in range(150):
+		for _ in range(int(sett.WORLD_HEIGHT / 165)):
 			clouds.append(Cloud())
 		if self.load_data:
 			self.load_data = False
@@ -305,33 +317,45 @@ class Game:
 				state = load_game()
 				self.boat = state["boat"]
 				self.islands = state["islands"]
+				for island in self.islands:
+					for _ in range(random.randint(1, 5)):
+						seagulls.append(Seagull(island.x, island.y, max_radius = 2000))
 				self.rocks = state["rocks"]
+				for rock in self.rocks:
+					for _ in range(random.randint(0, 3)):
+						seagulls.append(Seagull(rock.x, rock.y, max_radius = 700))
 				self.wind = state["wind"]
-				return clouds, get_stop_btns()
+				return clouds, seagulls, get_stop_btns()
 			except Exception as e:
 				self.game_running = False
 				self.state = "MAIN_MENU"
-				return clouds, stop_buttons
+				return clouds, seagulls, stop_buttons
 		self.boat = Boat(x = sett.WIDTH // 2, y = sett.HEIGHT // 2)
 		self.wind = Wind()
 		boat_x, boat_y = sett.WIDTH // 2, sett.HEIGHT // 2
 		starting_island = Island(x=boat_x, y=boat_y + 210, size=200)
 		self.islands.append(starting_island)
+		for _ in range(random.randint(1, 5)):
+				seagulls.append(Seagull(boat_x, boat_y + 210, max_radius = 2000))
 		self.rocks = []
 		min_distance = 200
-		for _ in range(50):
+		for _ in range(int(sett.WORLD_HEIGHT / 500)):
 			x, y = random.uniform(-sett.WORLD_WIDTH, sett.WORLD_WIDTH), random.uniform(-sett.WORLD_HEIGHT, sett.WORLD_HEIGHT)
 			#Reject if too close to boat
 			while ((x - sett.WIDTH // 2) ** 2 + (y - sett.HEIGHT // 2) ** 2) < min_distance ** 2:
 				x, y = random.uniform(-sett.WORLD_WIDTH, sett.WORLD_WIDTH), random.uniform(-sett.WORLD_HEIGHT, sett.WORLD_HEIGHT)
 			self.islands.append(Island(x=x, y=y))
-		for _ in range(250):
+			for _ in range(random.randint(1, 5)):
+				seagulls.append(Seagull(x, y, max_radius = 2000))
+		for _ in range(int(sett.WORLD_HEIGHT / 100)):
 			x, y = random.uniform(-sett.WORLD_WIDTH, sett.WORLD_WIDTH), random.uniform(-sett.WORLD_HEIGHT, sett.WORLD_HEIGHT)
 			#Reject if too close to boat
 			while ((x - sett.WIDTH // 2) ** 2 + (y - sett.HEIGHT // 2) ** 2) < min_distance ** 2:
 				x, y = random.uniform(-sett.WORLD_WIDTH, sett.WORLD_WIDTH), random.uniform(-sett.WORLD_HEIGHT, sett.WORLD_HEIGHT)
 			self.rocks.append(Rock(x=x, y=y))
-		return clouds, stop_buttons
+			for _ in range(random.randint(0, 3)):
+				seagulls.append(Seagull(x, y, max_radius = 700))
+		return clouds, seagulls, stop_buttons
 			
 			
 if __name__ == "__main__":

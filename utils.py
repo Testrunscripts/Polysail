@@ -143,12 +143,13 @@ class Button:
 		self.font = pygame.font.Font(None, int(screen_height * 0.02))
 		self.rect = pygame.Rect(pos[0], pos[1], width, height)
 		self.text = text
-		
+		# Pre-render text once
+		self.text_surface = self.font.render(self.text, True, sett.colors["WHITE"])
+		self.text_rect = self.text_surface.get_rect(center = self.rect.center)
+
 	def is_clicked(self, pos):
 		return self.rect.collidepoint(pos)
 		
 	def draw(self, screen):
 		pygame.draw.rect(screen, self.color, self.rect)
-		text_surface = self.font.render(self.text, True, sett.colors["WHITE"])
-		text_rect = text_surface.get_rect(center = self.rect.center)
-		screen.blit(text_surface, text_rect)
+		screen.blit(self.text_surface, self.text_rect)
