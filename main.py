@@ -155,6 +155,25 @@ class Game:
 				boat.adjust_rudder(0.05 if self.mouse_pos[0] < self.rudder_rect.centerx else -0.05)
 			elif self.reef_rect.collidepoint(self.mouse_pos):
 				boat.adjust_reef(0.05 if self.mouse_pos[0] < self.reef_rect.centerx else -0.05)
+				
+		#Held adjustments for keyboard controls
+		keys = pygame.key.get_pressed()
+		if self.state == "NEW_GAME" and boat and not boat.stopped:
+			#Sail angle (Q/E)
+			if keys[pygame.K_q]:
+				boat.adjust_sail(0.5)
+			if keys[pygame.K_e]:
+				boat.adjust_sail(-0.5)
+			#Rudder (A/D)
+			if keys[pygame.K_a]:
+				boat.adjust_rudder(0.05)
+			if keys[pygame.K_d]:
+				boat.adjust_rudder(-0.05)
+			#Reef (W/S)
+			if keys[pygame.K_w]:
+				boat.adjust_reef(0.05)
+			if keys[pygame.K_s]:
+				boat.adjust_reef(-0.05)
 
 	def credits(self):
 		if not self.buttons:
@@ -291,9 +310,18 @@ class Game:
 		
 			self.handle_events(self.boat, stop_buttons = stop_buttons if stop_buttons else None)
 			
-			pygame.draw.rect(self.screen, sett.colors["RED"], self.sail_rect)
-			pygame.draw.rect(self.screen, sett.colors["RED"], self.rudder_rect)
-			pygame.draw.rect(self.screen, sett.colors["RED"], self.reef_rect)
+			#Draw the control pads
+			for rect, label in [(self.sail_rect, "Sail"), (self.rudder_rect, "Rudder"), (self.reef_rect, "Reef")]:
+			 #Rectangle
+			 pygame.draw.rect(self.screen, sett.colors["RED"], rect)
+			 #Line
+			 center_x = rect.centerx
+			 pygame.draw.line(self.screen, sett.colors["WHITE"], (center_x, rect.top), (center_x, rect.bottom), 2)
+			 #Label
+			 label_surface = self.font_small.render(label, True, sett.colors["WHITE"])
+			 label_x = rect.centerx - label_surface.get_width() // 2
+			 label_y = rect.top - label_surface.get_height() - 5  #5 pixels above the rect
+			 self.screen.blit(label_surface, (label_x, label_y))
 			draw_wind_rose(self.screen, (200, 150), 30, self.wind.current_direction, self.wind.current_speed, self.font_small, self.font_small)
 			display_info(self.screen, self.boat)
 			dev.draw_debug(self.screen)

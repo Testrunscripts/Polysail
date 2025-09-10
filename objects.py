@@ -47,9 +47,18 @@ class Boat(MovingObject):
 		if self.stopped:
 			return
 
-		#Compute sail effect
+		#Compute relative wind angle
 		relative_wind = (wind.current_direction - self.orientation + 360) % 360
-		effective_angle = abs(relative_wind - self.sail)
+
+		#Ideal sail angle (0-360)
+		ideal_sail_raw = relative_wind
+		#Normalize to 0-90°
+		ideal_sail = ideal_sail_raw % 180
+		if ideal_sail > 90:
+			ideal_sail = 180 - ideal_sail
+
+		#Compute effectiveness
+		effective_angle = abs(ideal_sail - self.sail)
 		if effective_angle > 90:
 			effective_angle = 180 - effective_angle
 
@@ -58,15 +67,15 @@ class Boat(MovingObject):
 		else:
 			sail_effectiveness = max(0, math.cos(math.radians(effective_angle)) * 0.2)
 
-		#Target speed based on wind/reef
+		#Target speed
 		raw_speed = (wind.current_speed * 0.2) * sail_effectiveness * self.reef
 		max_speed = 10 * self.reef + 2
 		speed_multiplier = 2
 		target_speed = min(raw_speed, max_speed) * speed_multiplier
 
-		#Smoothly adjust toward target speed
-		accel_up = 0.5   #Acceleration rate when speeding up
-		accel_down = 0.2 #Deceleration rate when reefing or wind drops
+		#Smoothly adjust
+		accel_up = 0.5
+		accel_down = 0.2
 
 		if self.speed < target_speed:
 			self.speed += accel_up * dt
@@ -77,18 +86,18 @@ class Boat(MovingObject):
 			if self.speed < target_speed:
 				self.speed = target_speed
 
-		#Natural water drag (very gentle now)
+		#Drag
 		self.speed *= (1 - 0.005 * dt)
 		self.speed = max(0, self.speed)
 
-		#Angular inertia (rudder)
+		#Rudder
 		turn_rate = 2 / (1 + self.speed)
 		desired_angular_velocity = self.rudder * turn_rate
 		self.angular_velocity += (desired_angular_velocity - self.angular_velocity) * 0.05
 		self.orientation += self.angular_velocity * dt
 		self.orientation %= 360
 
-		#Small wind drift
+		#Wind drift
 		angle_diff = (wind.current_direction - self.orientation + 360) % 360
 		if angle_diff > 180:
 			angle_diff -= 360
