@@ -125,6 +125,9 @@ class Game:
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				self.exit_game()
+			elif event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_ESCAPE:
+					self.exit_game()
 			elif event.type == pygame.MOUSEBUTTONDOWN:
 				self.mouse_held = True
 				self.mouse_pos = event.pos
@@ -136,10 +139,15 @@ class Game:
 							if btn.text == "Set Sail":
 								boat.release()
 							elif btn.text == "Save":
-								#self.boat.surface = None
+								self.boat.surface = None
+								surface = self.boat.island.island_name_surface
+								self.boat.island_name_surface = None
+								for island in self.islands:
+									island.surface = None
 								for rock in self.rocks:
 									rock.surface = None
 								save_game(boat = boat, islands = self.islands, rocks = self.rocks, wind = self.wind)
+								self.boat.island.island_name_surface = surface
 							elif btn.text == "Exit":
 								self.exit_game()
 							return  #Stop further processing this click
@@ -353,6 +361,7 @@ class Game:
 				state = load_game()
 				self.boat = state["boat"]
 				self.islands = state["islands"]
+				self.boat.island.island_name_surface = self.font_large.render(self.boat.island.name.capitalize(), True, sett.colors["WHITE"], sett.colors["BLUE"])
 				for island in self.islands:
 					for _ in range(random.randint(1, 5)):
 						seagulls.append(Seagull(island.x, island.y, max_radius = 2000))

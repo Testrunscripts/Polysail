@@ -24,6 +24,22 @@ def bounce_back(entity, obstacle):
 	entity.orientation = (entity.orientation + 180) % 360
 	
 	
+def cleanup_for_save(obj):
+	if isinstance(obj, pygame.Surface):
+		return None
+	if isinstance(obj, list):
+		return [cleanup_for_save(o) for o in obj]
+	if isinstance(obj, dict):
+		return {k: cleanup_for_save(v) for k, v in obj.items()}
+	if hasattr(obj, "__dict__"):
+		for k, v in vars(obj).items():
+			if isinstance(v, pygame.Surface):
+				setattr(obj, k, None)
+			elif isinstance(v, (list, dict)) or hasattr(v, "__dict__"):
+				cleanup_for_save(v)
+	return obj
+	
+	
 def display_info(screen, boat):
 	font = pygame.font.Font(None, 40)
 	info_text = [
@@ -129,8 +145,7 @@ def render_multiline(screen, text, font, color):
 		
 def save_game(file="save_main.pkl", **kwargs):
 	for obj in kwargs.values():
-		if hasattr(obj, "surface"):
-			obj.surface = None
+		obj = cleanup_for_save(obj)
 		if hasattr(obj, "wakes"):
 			obj.wakes = []
 	save_path = get_save_path(file)
