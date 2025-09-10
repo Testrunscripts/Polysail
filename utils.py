@@ -1,5 +1,6 @@
 
 import math
+import os
 import pickle
 import pygame
 
@@ -89,6 +90,13 @@ def draw_wind_rose(surface, center, size, direction_angle, speed, font_small, fo
 		hx = int(math.cos(angle_radians + offset) * head_size)
 		hy = int(math.sin(angle_radians + offset) * head_size)
 		pygame.draw.line(surface, sett.colors["RED"], arrow_tip, (arrow_tip[0] - hx, arrow_tip[1] - hy), 3)
+		
+		
+def get_save_path(filename="save_main.pkl"):
+	doc_folder = os.path.join(os.path.expanduser("~"), "Documents")
+	if not os.path.exists(doc_folder):
+		os.makedirs(doc_folder)
+	return os.path.join(doc_folder, filename)
 	
 	
 def get_stop_btns():
@@ -101,9 +109,12 @@ def get_stop_btns():
 	
 	
 def load_game():
-	with open("save_main.pkl", "rb") as f:
-		state = pickle.load(f)
-		return state
+	save_path = get_save_path()
+	if os.path.exists(save_path):
+		with open(save_path, "rb") as f:
+			state = pickle.load(f)
+			return state
+	return None
 	
 	
 def render_multiline(screen, text, font, color):
@@ -116,13 +127,14 @@ def render_multiline(screen, text, font, color):
 		screen.blit(text_surface, (offset_x, offset_y))
 		
 		
-def save_game(file = "save_main.pkl", **kwargs):
+def save_game(file="save_main.pkl", **kwargs):
 	for obj in kwargs.values():
 		if hasattr(obj, "surface"):
 			obj.surface = None
 		if hasattr(obj, "wakes"):
 			obj.wakes = []
-	with open(file, "wb") as f:
+	save_path = get_save_path(file)
+	with open(save_path, "wb") as f:
 		pickle.dump(kwargs, f)
 		
 		

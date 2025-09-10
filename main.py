@@ -1,6 +1,8 @@
 
+import os
 import pygame
 import random
+import sys
 
 import settings as sett
 
@@ -10,6 +12,12 @@ from utils import Button, bounce_back, display_info, draw_wind_rose, get_stop_bt
 
 pygame.init()
 pygame.mixer.init()
+
+
+def resource_path(relative_path):
+	if hasattr(sys, '_MEIPASS'):
+		return os.path.join(sys._MEIPASS, relative_path)
+	return os.path.join(os.path.abspath("."), relative_path)
 
 
 class DevTools:
@@ -57,7 +65,7 @@ class Game:
 		self.current_track = 0
 		self.MUSIC_END = pygame.USEREVENT + 1
 		pygame.mixer.music.set_endevent(self.MUSIC_END)
-		pygame.mixer.music.load(self.playlist[0])
+		pygame.mixer.music.load(resource_path(self.playlist[0]))
 		pygame.mixer.music.play()
 		
 		self.mouse_held = False
@@ -144,7 +152,7 @@ class Game:
 				
 			elif event.type == self.MUSIC_END:
 				self.current_track = (self.current_track + 1) % len(self.playlist)
-				pygame.mixer.music.load(self.playlist[self.current_track])
+				pygame.mixer.music.load(resource_path(self.playlist[self.current_track]))
 				pygame.mixer.music.play()
 
 		#Held adjustments for normal controls
