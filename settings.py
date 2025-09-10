@@ -14,7 +14,7 @@ colors = {
 }
 
 
-credit_text = "Designed and Developed by: Mytraya\n \nMade in Pygame\n \nSoundtrack created in Udio"
+credit_text = "Designed and Developed by: Testrunscripts\n \nMade in Pygame\n \nSoundtrack created in Udio"
 
 
 howtoplay_text = """- Hold the left (or press Q) or right side (or press E)\nof the sail pad to trim the sails\n\n- Hold either side of the rudder pad to control the rudder (A and D)\n\n- Hold the left side of the reef pad (or press W) to unreef the sails,\nhold the right side (or press S) to reef them again\n\n- Dock at an island to bring up the menu\n\n- Seagulls can give away island and rock locations"""
