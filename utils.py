@@ -22,6 +22,7 @@ def bounce_back(entity, obstacle):
 
 	#Flip and stop
 	entity.orientation = (entity.orientation + 180) % 360
+	entity.speed *= 0.75
 	
 	
 def cleanup_for_save(obj):
@@ -165,7 +166,7 @@ def wind_drift(entity, wind):
 		
 		
 class Button:
-	def __init__(self, text, pos, width, height, screen_height, color = None):
+	def __init__(self, text, pos, width, height, screen_height, color = None, states = None):
 		self.color = color or sett.colors["BLUE"]
 		self.font = pygame.font.Font(None, int(screen_height * 0.02))
 		self.rect = pygame.Rect(pos[0], pos[1], width, height)
@@ -173,6 +174,10 @@ class Button:
 		# Pre-render text once
 		self.text_surface = self.font.render(self.text, True, sett.colors["WHITE"])
 		self.text_rect = self.text_surface.get_rect(center = self.rect.center)
+		self.states = states or ["MAIN_MENU", "CREDITS", "HOWTOPLAY"]
+		
+	def is_active(self, current_state):
+		return current_state in self.states
 
 	def is_clicked(self, pos):
 		return self.rect.collidepoint(pos)

@@ -60,6 +60,7 @@ class Game:
 		"Assets/Calm Waters.mp3",
 		"Assets/Waves of Freedom.mp3",
 		"Assets/Drift on the Horizon.mp3",
+		"Assets/Sailing the Digital Tides.mp3",
 		]
 		random.shuffle(self.playlist)
 		self.current_track = 0
@@ -96,7 +97,7 @@ class Game:
 
 	def handle_button_click(self, pos):
 		for button in self.buttons:
-			if button.is_clicked(pos):
+			if button.is_clicked(pos) and button.is_active(self.state):
 				if button.text == "Main Menu":
 					self.state = "MAIN_MENU"
 				elif button.text == "New Game":
@@ -294,16 +295,16 @@ class Game:
 			
 			self.wind.update_wind(current_time)
 			
-			for island in self.islands:
-				offset_x = island.x - cam_x
-				offset_y = island.y - cam_y
-				if not (offset_x + island.size < 0 or offset_x - island.size > sett.WIDTH or offset_y + island.size < 0 or offset_y - island.size > sett.HEIGHT):
-					island.draw(self.screen, cam_x, cam_y)
 			for rock in self.rocks:
 				offset_x = rock.x - cam_x
 				offset_y = rock.y - cam_y
 				if not (offset_x + rock.size < 0 or offset_x - rock.size > sett.WIDTH or offset_y + rock.size < 0 or offset_y - rock.size > sett.HEIGHT):
 					rock.draw(self.screen, cam_x, cam_y)
+			for island in self.islands:
+				offset_x = island.x - cam_x
+				offset_y = island.y - cam_y
+				if not (offset_x + island.size < 0 or offset_x - island.size > sett.WIDTH or offset_y + island.size < 0 or offset_y - island.size > sett.HEIGHT):
+					island.draw(self.screen, cam_x, cam_y)
 			self.boat.draw(self.screen, cam_x, cam_y)
 			for seagull in seagulls:
 				offset_x = seagull.x - cam_x
@@ -349,11 +350,11 @@ class Game:
 			self.state_dict[self.state]()
 			
 	def setup(self):
-		sett.WORLD_WIDTH, sett.WORLD_HEIGHT = 10000, 10000
+		sett.WORLD_WIDTH, sett.WORLD_HEIGHT = 20000, 20000
 		clouds = []
 		seagulls = []
 		stop_buttons = None
-		for _ in range(int(sett.WORLD_HEIGHT / 165)):
+		for _ in range(int(sett.WORLD_HEIGHT / 200)):
 			clouds.append(Cloud())
 		if self.load_data:
 			self.load_data = False
@@ -384,7 +385,7 @@ class Game:
 				seagulls.append(Seagull(boat_x, boat_y + 210, max_radius = 2000))
 		self.rocks = []
 		min_distance = 200
-		for _ in range(int(sett.WORLD_HEIGHT / 500)):
+		for _ in range(int(sett.WORLD_HEIGHT / 750)):
 			x, y = random.uniform(-sett.WORLD_WIDTH, sett.WORLD_WIDTH), random.uniform(-sett.WORLD_HEIGHT, sett.WORLD_HEIGHT)
 			#Reject if too close to boat
 			while ((x - sett.WIDTH // 2) ** 2 + (y - sett.HEIGHT // 2) ** 2) < min_distance ** 2:
@@ -392,7 +393,7 @@ class Game:
 			self.islands.append(Island(x=x, y=y))
 			for _ in range(random.randint(1, 5)):
 				seagulls.append(Seagull(x, y, max_radius = 2000))
-		for _ in range(int(sett.WORLD_HEIGHT / 100)):
+		for _ in range(int(sett.WORLD_HEIGHT / 150)):
 			x, y = random.uniform(-sett.WORLD_WIDTH, sett.WORLD_WIDTH), random.uniform(-sett.WORLD_HEIGHT, sett.WORLD_HEIGHT)
 			#Reject if too close to boat
 			while ((x - sett.WIDTH // 2) ** 2 + (y - sett.HEIGHT // 2) ** 2) < min_distance ** 2:

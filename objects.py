@@ -160,6 +160,8 @@ class Boat(MovingObject):
 		self.island = None
 		self.stopped = False
 		self.orientation += 180
+		self.x += math.cos(math.radians(self.orientation)) * 10
+		self.y += math.sin(math.radians(self.orientation)) * 10
 		self.speed = 1
 		
 	def stop_at_obstacle(self, island):
